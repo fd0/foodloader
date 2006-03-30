@@ -40,16 +40,17 @@ void (*jump_to_application)(void) = (void *)0x0000;
 #define HIGH(x) ( (uint8_t) (x >> 8) )
 #define LOW(x)  ( (uint8_t) x )
 
+#define noinline __attribute__((noinline))
+
 
 /** output one character */
-static inline void uart_putc(uint8_t data)
+static noinline void uart_putc(uint8_t data)
 /*{{{*/ {
 
     /* put data in buffer */
     _UDR_UART0 = data;
 
     /* loop until data has been transmitted */
-    //while (!(_UCSRA_UART0 & _BV(_UDRE_UART0)));
     while (!(_UCSRA_UART0 & _BV(_UDRE_UART0)));
 
 } /* }}} */
@@ -67,7 +68,7 @@ static inline void uart_puts(uint8_t buffer[])
 } /* }}} */
 
 /** block until one character has been read */
-static inline uint8_t uart_getc(void)
+static noinline uint8_t uart_getc(void)
 /*{{{*/ {
 
     /* wait if a byte has been received */
@@ -95,12 +96,14 @@ static inline void init_uart(void)
 } /* }}} */
 
 int main(void) {
-    uint16_t buffer_size;
+#   if (BLOCKSIZE < 256)
+        uint8_t buffer_size;
+#   else
+        uint16_t buffer_size;
+#   endif
     uint8_t memory_type;
 
     init_uart();
-
-    cli();
 
     /* main loop */
     while (1) {
@@ -111,6 +114,7 @@ int main(void) {
 
         switch (command) {
             case 'P':   /* enter programming mode, respond with CR */
+            case 'L':   /* leave programming mode, respond with CR */
                         uart_putc('\r');
                         break;
 
@@ -155,10 +159,6 @@ int main(void) {
 
             /* 'Q': read extended fuse bits -- NOT IMPLEMENTED */
 
-            case 'L':   /* leave programming mode, respond with CR */
-                        uart_putc('\r');
-                        break;
-
             case 'T':   /* select device type: received device type and respond with CR */
                         /* ignore this command, only the device this bootloader
                          * is installed on can be programmed :) */
@@ -183,6 +183,7 @@ int main(void) {
 
             case 'S':   /* give software identifier, send exactly 7 chars */
                         uart_puts((uint8_t *)"FNORD!1");
+
                         break;
 
             case 'V':   /* return software version (2 byte) */
