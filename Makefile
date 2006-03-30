@@ -30,6 +30,10 @@ include avr.mk
 .PHONY: all
 
 all: $(TARGET).hex $(TARGET).lss
+	@echo "==============================="
+	@echo -n "bootloader size is: "
+	@$(SIZE) -A $< | grep "\.sec1" | tr -s " " | cut -d" " -f2
+	@echo "==============================="
 
 $(TARGET): $(OBJECTS) $(TARGET).o
 

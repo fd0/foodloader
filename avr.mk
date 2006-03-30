@@ -16,6 +16,7 @@ CP = cp
 RM = rm -f
 AVRDUDE = avrdude
 AVRDUDE_BAUDRATE = 115200
+SIZE = avr-size
 
 -include config.mk
 
@@ -74,3 +75,6 @@ program-serial-eeprom-%: %.eep.hex
 
 %.lss: %
 	$(OBJDUMP) -h -S $< > $@
+
+%-size: %.hex
+	$(SIZE) $<
