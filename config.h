@@ -163,4 +163,11 @@
 /* buffer load configuration */
 #define BLOCKSIZE SPM_PAGESIZE
 
+/* use 8 or 16 bit counter, according to the page size of the target device */
+#if SPM_PAGESIZE < 256
+#   define BUF_T uint8_t
+#else
+#   define BUF_T uint16_t
+#endif
+
 #endif /* _FOODLOADER_CONFIG_H */

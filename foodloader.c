@@ -29,7 +29,8 @@
 #include "config.h"
 #include "uart.h"
 
-uint16_t address;                   /* start write at this address */
+uint16_t flash_address;             /* start flash (byte address, converted) write at this address */
+uint16_t eeprom_address;            /* start eerprom (byte address) write at this address */
 uint16_t data_buffer[BLOCKSIZE/2];  /* main data buffer for block-mode commands */
 
 
@@ -96,12 +97,10 @@ static inline void init_uart(void)
 } /* }}} */
 
 int main(void) {
-#   if (BLOCKSIZE < 256)
-        uint8_t buffer_size;
-#   else
-        uint16_t buffer_size;
-#   endif
     uint8_t memory_type;
+
+    /* BUF_T is defined in config.h, according the pagesize */
+    BUF_T buffer_size;
 
     init_uart();
 
@@ -123,7 +122,15 @@ int main(void) {
                         break;
 
             case 'A':   /* set write address start (in words), read high and low byte and respond with CR */
-                        address = (uart_getc() << 8) | uart_getc();
+
+                        /* eeprom address is a byte address */
+                        eeprom_address = (uart_getc() << 8) | uart_getc();
+
+                        /* flash address is a byte address too, but we get a
+                         * word address so convert it */
+                        flash_address = eeprom_address << 1;
+
+                        /* acknowledge */
                         uart_putc('\r');
                         break;
 
@@ -144,8 +151,8 @@ int main(void) {
             case 'e':   /* do a chip-erase, respond with CR afterwards */
                         /* iterate over all pages in flash, and erase every singe one of them */
 
-                        for (address = 0; address <= APPLICATION_SECTION_END; address += SPM_PAGESIZE) {
-                            boot_page_erase_safe(address);
+                        for (flash_address = 0; flash_address <= APPLICATION_SECTION_END; flash_address += SPM_PAGESIZE) {
+                            boot_page_erase_safe(flash_address);
                         }
 
                         uart_putc('\r');
@@ -207,7 +214,7 @@ int main(void) {
 
             case 'B':   /* start block flash or eeprom load (fill mcu internal page buffer) */
 
-                        /* first, read buffer size */
+                        /* first, read buffer size (in bytes) */
                         buffer_size = (uart_getc() << 8) | uart_getc();
 
                         /* check if our buffer can hold all this data */
@@ -221,43 +228,48 @@ int main(void) {
 
                         /* memory type is flash */
                         if (memory_type == 'F') {
-                            uint16_t i;
+                            BUF_T i;
+                            uint16_t temp_word_buffer;
 
-                            /* read data into buffer */
-                            for (i = 0; i < buffer_size; i++) {
-                                /* read word, high byte first */
-                                data_buffer[i] = (uart_getc() << 8) | uart_getc();
-                            }
-
-                            /* convert address from word to byte address */
-                            address <<= 1;
-
-                            /* iterate through the words, fill the temporary page buffer */
-                            uint8_t temp_address = address;
+                            uint8_t temp_address = flash_address;
                             boot_spm_busy_wait();
 
-                            for (i = 0; i < BLOCKSIZE; i++) {
-                                boot_page_fill(temp_address, data_buffer[i]);
+                            /* read data, wordwise, low byte first */
+                            for (i = 0; i < buffer_size/2; i++) {
+
+                                /* get data word */
+                                temp_word_buffer = uart_getc() | (uart_getc() << 8);
+
+                                /* write data to temporary buffer */
+                                boot_page_fill(temp_address, temp_word_buffer);
 
                                 /* increment by two, since temp_address is a byte
                                  * address, but we are writing words! */
                                 temp_address += 2;
                             }
 
-                            /* after filling the temp buffer, write the page */
-                            boot_page_write_safe(address);
+                            /* after filling the temp buffer, write the page and wait till we're done */
+                            boot_page_write_safe(flash_address);
+                            boot_spm_busy_wait();
+
+                            /* re-enable application flash section, so we can read it again */
+                            boot_rww_enable();
+
+                            /* store next page's address, since we do auto-address-incrementing */
+                            flash_address = temp_address;
 
                             uart_putc('\r');
 
                         } else if (memory_type == 'E') {
                             //uart_putc('E');
-                            uint8_t temp_data, i;
+                            uint8_t temp_data;
+                            BUF_T i;
 
                             for (i = 0; i < buffer_size; i++) {
                                 temp_data = uart_getc();
-                                eeprom_write_byte( (uint8_t *)address, temp_data);
+                                eeprom_write_byte( (uint8_t *)eeprom_address, temp_data);
 
-                                address++;
+                                eeprom_address++;
                             }
 
                             uart_putc('\r');
@@ -279,35 +291,32 @@ int main(void) {
                         /* memory type is flash */
                         if (memory_type == 'F') {
 
-                            /* convert address from word to byte address */
-                            address <<= 1;
-
                             /* read buffer_size words */
                             for (uint8_t i = 0; i < buffer_size; i += 2) {
-                                uint16_t temp_data;
+                                uint16_t temp_word_buffer;
 
                                 /* read word */
-                                temp_data = pgm_read_word(address);
+                                temp_word_buffer = pgm_read_word(flash_address);
 
                                 /* send data */
-                                uart_putc(HIGH(data_buffer[0]));
-                                uart_putc(LOW(data_buffer[0]));
+                                uart_putc(LOW(temp_word_buffer));
+                                uart_putc(HIGH(temp_word_buffer));
 
                                 /* increment address by 2, since it's a byte address */
-                                address += 2;
+                                flash_address += 2;
                             }
 
                         /* if memory type is eeprom */
                         } else if (memory_type == 'E') {
 
                             for (uint8_t i = 0; i < buffer_size; i += 1) {
-                                uint8_t temp_data;
+                                uint8_t temp_buffer;
 
                                 /* read and send byte */
-                                temp_data = eeprom_read_byte((uint8_t *)address);
-                                uart_putc(temp_data);
+                                temp_buffer = eeprom_read_byte((uint8_t *)eeprom_address);
+                                uart_putc(temp_buffer);
 
-                                address++;
+                                eeprom_address++;
                             }
                         } else {
                             uart_putc('?');
