@@ -223,6 +223,12 @@ int main(void) {
                         if (memory_type == 'F') {
                             uint16_t i;
 
+                            /* read data into buffer */
+                            for (i = 0; i < buffer_size; i++) {
+                                /* read word, high byte first */
+                                data_buffer[i] = (uart_getc() << 8) | uart_getc();
+                            }
+
                             /* convert address from word to byte address */
                             address <<= 1;
 
@@ -230,9 +236,8 @@ int main(void) {
                             uint8_t temp_address = address;
                             boot_spm_busy_wait();
 
-                            for (i = 0; i < buffer_size; i+=2) {
-                                uint16_t buf = uart_getc()<<8 | uart_getc();
-                                boot_page_fill(temp_address, buf);
+                            for (i = 0; i < BLOCKSIZE; i++) {
+                                boot_page_fill(temp_address, data_buffer[i]);
 
                                 /* increment by two, since temp_address is a byte
                                  * address, but we are writing words! */
