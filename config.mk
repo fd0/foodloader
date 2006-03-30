@@ -1,3 +1,0 @@
-SERIAL_DEV=/dev/ttyS0
-ISP_DEV=/dev/ttyUSB0
-ISP_PROG=avr109
