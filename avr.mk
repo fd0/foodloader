@@ -34,14 +34,29 @@ ifneq ($(DEBUG),)
 	CFLAGS += -Wmissing-declarations -Wredundant-decls
 	CFLAGS += -Wstrict-prototypes -Wshadow -Wbad-function-cast
 	CFLAGS += -Winline -Wpointer-arith -Wsign-compare
-	#CFLAGS += -Wunreachable-code -Wdisabled-optimization -Werror
-	CFLAGS += -Wunreachable-code -Wdisabled-optimization
+	CFLAGS += -Wunreachable-code -Wdisabled-optimization -Werror
 	CFLAGS += -Wcast-align -Wwrite-strings -Wnested-externs -Wundef
 	CFLAGS += -Wa,-adhlns=$(basename $@).lst
 	CFLAGS += -DDEBUG
 endif
 
 all:
+
+.PHONY: sanity-check
+
+sanity-check:
+ifndef F_CPU
+	@echo "please define F_CPU!"
+	@exit 1
+endif
+
+ifndef MCU
+	@echo "please define MCU!"
+	@exit 1
+endif
+
+
+$(OBJECTS): sanity-check
 
 clean:
 	$(RM) *.hex *.eep.hex *.o *.lst *.lss
@@ -78,3 +93,5 @@ program-serial-eeprom-%: %.eep.hex
 
 %-size: %.hex
 	$(SIZE) $<
+
+

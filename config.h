@@ -36,19 +36,10 @@
 #error please define F_CPU!
 #endif
 
-/* check if this cpu is supported */
-#if !(defined(__AVR_ATmega8__) || \
-      defined(__AVR_ATmega88__) || \
-      defined(__AVR_ATmega168__))
-#error this cpu isn't supported yet!
-#endif
-
 /* check if the bootloader start address has been given */
 #if !(defined(BOOT_SECTION_START))
 #error please define BOOT_SECTION_START as the byte address of bootloader section
 #endif
-
-#define APPLICATION_SECTION_END (BOOT_SECTION_START-1)
 
 /* cpu specific configuration registers */
 #if defined(__AVR_ATmega8__)
@@ -72,6 +63,8 @@
 #define _UDR_UART0 UDR
 #define _UDRE_UART0 UDRE
 #define _RXC_UART0 RXC
+#define _IVREG GICR
+#define _TIFR_TIMER1 TIFR
 
 /* see datasheet! */
 #define _SIG_BYTE_1 0x1e
@@ -103,6 +96,8 @@
 #define _UDR_UART0 UDR0
 #define _UDRE_UART0 UDRE0
 #define _RXC_UART0 RXC0
+#define _IVREG MCUCR
+#define _TIFR_TIMER1 TIFR1
 
 /* see datasheet! */
 #define _SIG_BYTE_1 0x1e
@@ -134,6 +129,8 @@
 #define _UDR_UART0 UDR0
 #define _UDRE_UART0 UDRE0
 #define _RXC_UART0 RXC0
+#define _IVREG MCUCR
+#define _TIFR_TIMER1 TIFR1
 
 /* see datasheet! */
 #define _SIG_BYTE_1 0x1e
@@ -144,6 +141,8 @@
 #define _AVR910_DEVCODE 0x35
 
 /* }}} */
+#else
+#error this cpu isn't supported yet!
 #endif
 
 /* debug defines */
@@ -151,14 +150,18 @@
 #define DEBUG 0
 #endif
 
-/* include uart support per default */
-#ifndef SERIAL_UART
-#define SERIAL_UART 1
+/* do not send boot message by default */
+#ifndef SEND_BOOT_MESSAGE
+#define SEND_BOOT_MESSAGE 0
 #endif
+
+/* bootloader activation method */
+#define BOOTLOADER_DDR DDRC
+#define BOOTLOADER_PORT PORTC
+#define BOOTLOADER_PIN PINC0
 
 /* uart configuration */
 #define UART_BAUDRATE 115200
-
 
 /* buffer load configuration */
 #define BLOCKSIZE SPM_PAGESIZE

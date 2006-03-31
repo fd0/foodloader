@@ -96,7 +96,22 @@ static inline void init_uart(void)
 
 } /* }}} */
 
-int main(void) {
+/** move interrupt vectors to application section and jump to main program */
+static noinline void start_application(void)
+/* {{{ */ {
+
+        /* reset input pin */
+        BOOTLOADER_PORT &= ~_BV(BOOTLOADER_PIN);
+
+        /* move interrupt vectors to application section and jump to main program */
+        _IVREG = _BV(IVCE);
+        _IVREG = 0;
+        jump_to_application();
+
+} /* }}} */
+
+int main(void)
+/* {{{ */ {
     uint8_t memory_type;
 
     /* BUF_T is defined in config.h, according the pagesize */
@@ -104,14 +119,38 @@ int main(void) {
 
     init_uart();
 
+    /* send boot message */
+#   if SEND_BOOT_MESSAGE
+        uart_putc('b');
+#   endif
+
+    /* configure pin as input and enable pullup */
+    BOOTLOADER_DDR &= ~_BV(BOOTLOADER_PIN);
+    BOOTLOADER_PORT |= _BV(BOOTLOADER_PIN);
+
+    /* check if pin is not pulled low */
+    if (PINC & _BV(PC0)) {
+#       if SEND_BOOT_MESSAGE
+        uart_putc('a');
+#       endif
+
+        start_application();
+    }
+
+#   if SEND_BOOT_MESSAGE
+    uart_putc('p');
+#   endif
+
     /* main loop */
-    while (1) {
+    while (1)
+    {
         uint8_t command;
 
         /* block until a command has been received */
         command = uart_getc();
 
-        switch (command) {
+        switch (command)
+        {
             case 'P':   /* enter programming mode, respond with CR */
             case 'L':   /* leave programming mode, respond with CR */
                         uart_putc('\r');
@@ -122,6 +161,7 @@ int main(void) {
                         break;
 
             case 'A':   /* set write address start (in words), read high and low byte and respond with CR */
+                        /* {{{ */
 
                         /* eeprom address is a byte address */
                         eeprom_address = (uart_getc() << 8) | uart_getc();
@@ -134,37 +174,22 @@ int main(void) {
                         uart_putc('\r');
                         break;
 
-            /* 'c': write program memory, low byte -- NOT IMPLEMENTED */
-
-            /* 'C': write program memory, high byte -- NOT IMPLEMENTED */
-
-            /* 'm': issue page write -- NOT IMPLEMENTED */
-
-            /* 'r': read lock bits -- NOT IMPLEMENTED */
-
-            /* 'R': read program memory -- NOT IMPLEMENTED */
-
-            /* 'd': read data (== eeprom) memory -- NOT IMPLEMENT */
-
-            /* 'D': write data (== eeprom) memory -- NOT IMPLEMENTED */
+                        /* }}} */
 
             case 'e':   /* do a chip-erase, respond with CR afterwards */
-                        /* iterate over all pages in flash, and erase every singe one of them */
+                        /* {{{ */
 
-                        for (flash_address = 0; flash_address <= APPLICATION_SECTION_END; flash_address += SPM_PAGESIZE) {
+                        /* iterate over all pages in flash, and try to erase every single
+                         * one of them (the bootloader section should be protected by lock-bits (!) */
+
+                        for (flash_address = 0; flash_address < BOOT_SECTION_START; flash_address += SPM_PAGESIZE) {
                             boot_page_erase_safe(flash_address);
                         }
 
                         uart_putc('\r');
                         break;
 
-            /* 'l': write lock bits -- NOT IMPLEMENTED */
-
-            /* 'F': read fuse bits -- NOT IMPLEMENTED */
-
-            /* 'N': read high fuse bits -- NOT IMPLEMENTED */
-
-            /* 'Q': read extended fuse bits -- NOT IMPLEMENTED */
+                        /* }}} */
 
             case 'T':   /* select device type: received device type and respond with CR */
                         /* ignore this command, only the device this bootloader
@@ -202,8 +227,11 @@ int main(void) {
                         uart_putc('S');
                         break;
 
-            case 'E':   /* exit bootloader and jump to main program */
-                        jump_to_application();
+            case 'E':   /* exit bootloader */
+
+                        start_application();
+                        uart_putc('\r');
+
                         break;
 
             case 'b':   /* check block support: return yes and 2 bytes block size we support */
@@ -213,6 +241,7 @@ int main(void) {
                         break;
 
             case 'B':   /* start block flash or eeprom load (fill mcu internal page buffer) */
+                        /* {{{ */
 
                         /* first, read buffer size (in bytes) */
                         buffer_size = (uart_getc() << 8) | uart_getc();
@@ -227,11 +256,17 @@ int main(void) {
                         memory_type = uart_getc();
 
                         /* memory type is flash */
-                        if (memory_type == 'F') {
+                        if (memory_type == 'F')
+                        /* {{{ */ {
+
                             BUF_T i;
                             uint16_t temp_word_buffer;
 
-                            uint8_t temp_address = flash_address;
+                            if (flash_address > BOOT_SECTION_START) {
+                                uart_putc(0);
+                            }
+
+                            uint16_t temp_address = flash_address;
                             boot_spm_busy_wait();
 
                             /* read data, wordwise, low byte first */
@@ -260,7 +295,10 @@ int main(void) {
 
                             uart_putc('\r');
 
-                        } else if (memory_type == 'E') {
+                        } /* }}} */
+                        else if (memory_type == 'E')
+                        /* {{{ */ {
+
                             //uart_putc('E');
                             uint8_t temp_data;
                             BUF_T i;
@@ -274,13 +312,17 @@ int main(void) {
 
                             uart_putc('\r');
 
-                        } else {
+                        } /* }}} */
+                        else {
                             uart_putc('?');
                         }
 
                         break;
 
+                        /* }}} */
+
             case 'g':   /* start block flash or eeprom read */
+                        /* {{{ */
 
                         /* first, read byte counter */
                         buffer_size = (uart_getc() << 8) | uart_getc();
@@ -289,7 +331,8 @@ int main(void) {
                         memory_type = uart_getc();
 
                         /* memory type is flash */
-                        if (memory_type == 'F') {
+                        if (memory_type == 'F')
+                        /* {{{ */ {
 
                             /* read buffer_size words */
                             for (uint8_t i = 0; i < buffer_size; i += 2) {
@@ -306,8 +349,10 @@ int main(void) {
                                 flash_address += 2;
                             }
 
+                        } /* }}} */
                         /* if memory type is eeprom */
-                        } else if (memory_type == 'E') {
+                        else if (memory_type == 'E')
+                        /* {{{ */ {
 
                             for (uint8_t i = 0; i < buffer_size; i += 1) {
                                 uint8_t temp_buffer;
@@ -318,11 +363,28 @@ int main(void) {
 
                                 eeprom_address++;
                             }
-                        } else {
+                        } /* }}} */
+                        else {
                             uart_putc('?');
                         }
 
                         break;
+
+                        /* }}} */
+
+            /* NOT IMPLEMENTED: */
+            /* {{{ */
+            /* 'c': write program memory, low byte -- NOT IMPLEMENTED */
+            /* 'C': write program memory, high byte -- NOT IMPLEMENTED */
+            /* 'm': issue page write -- NOT IMPLEMENTED */
+            /* 'r': read lock bits -- NOT IMPLEMENTED */
+            /* 'R': read program memory -- NOT IMPLEMENTED */
+            /* 'd': read data (== eeprom) memory -- NOT IMPLEMENT */
+            /* 'D': write data (== eeprom) memory -- NOT IMPLEMENTED */
+            /* 'l': write lock bits -- NOT IMPLEMENTED */
+            /* 'F': read fuse bits -- NOT IMPLEMENTED */
+            /* 'N': read high fuse bits -- NOT IMPLEMENTED */
+            /* 'Q': read extended fuse bits -- NOT IMPLEMENTED */ /* }}} */
 
             default:    /* default: respond with '?' */
                         uart_putc('?');
@@ -330,4 +392,4 @@ int main(void) {
         }
 
     }
-}
+} /* }}} */
