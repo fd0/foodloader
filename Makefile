@@ -69,6 +69,7 @@ $(TARGET): $(OBJECTS) $(TARGET).o
 .PHONY: install
 
 install: program-isp-$(TARGET)
+	@echo "don't forget: the lock-bits have been cleaned by the chip-erase!"
 
 .PHONY: clean clean-$(TARGET)
 

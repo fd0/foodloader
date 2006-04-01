@@ -31,7 +31,6 @@
 
 uint16_t flash_address;             /* start flash (byte address, converted) write at this address */
 uint16_t eeprom_address;            /* start eerprom (byte address) write at this address */
-uint16_t data_buffer[BLOCKSIZE/2];  /* main data buffer for block-mode commands */
 
 
 /* prototypes */
@@ -48,11 +47,11 @@ void (*jump_to_application)(void) = (void *)0x0000;
 static noinline void uart_putc(uint8_t data)
 /*{{{*/ {
 
-    /* put data in buffer */
-    _UDR_UART0 = data;
-
     /* loop until data has been transmitted */
     while (!(_UCSRA_UART0 & _BV(_UDRE_UART0)));
+
+    /* put data in buffer */
+    _UDR_UART0 = data;
 
 } /* }}} */
 
