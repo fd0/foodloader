@@ -100,7 +100,7 @@ static noinline void start_application(void)
 /* {{{ */ {
 
         /* reset input pin */
-        BOOTLOADER_PORT &= ~_BV(BOOTLOADER_PIN);
+        BOOTLOADER_PORT &= BOOTLOADER_MASK;
 
         /* move interrupt vectors to application section and jump to main program */
         _IVREG = _BV(IVCE);
@@ -124,11 +124,11 @@ int main(void)
 #   endif
 
     /* configure pin as input and enable pullup */
-    BOOTLOADER_DDR &= ~_BV(BOOTLOADER_PIN);
-    BOOTLOADER_PORT |= _BV(BOOTLOADER_PIN);
+    BOOTLOADER_DDR &= ~BOOTLOADER_MASK;
+    BOOTLOADER_PORT |= BOOTLOADER_MASK;
 
     /* check if pin is not pulled low */
-    if (PINC & _BV(PC0)) {
+    if (BOOTLOADER_PIN & BOOTLOADER_MASK) {
 #       if SEND_BOOT_MESSAGE
         uart_putc('a');
 #       endif
@@ -152,6 +152,9 @@ int main(void)
         {
             case 'P':   /* enter programming mode, respond with CR */
             case 'L':   /* leave programming mode, respond with CR */
+#if EXIT_BOOTLOADER == 0
+            case 'E':   /* exit bootloader, ignored */
+#endif
                         uart_putc('\r');
                         break;
 
@@ -226,7 +229,10 @@ int main(void)
                         uart_putc('S');
                         break;
 
+#if EXIT_BOOTLOADER == 1
             case 'E':   /* exit bootloader */
+#endif
+            case 'X':   /* start application */
 
                         start_application();
                         uart_putc('\r');

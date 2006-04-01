@@ -158,13 +158,17 @@
 /* bootloader activation method */
 #define BOOTLOADER_DDR DDRC
 #define BOOTLOADER_PORT PORTC
-#define BOOTLOADER_PIN PINC0
+#define BOOTLOADER_PIN PINC
+#define BOOTLOADER_MASK _BV(PINC0)
 
 /* uart configuration */
 #define UART_BAUDRATE 115200
 
 /* buffer load configuration */
 #define BLOCKSIZE SPM_PAGESIZE
+
+/* by default, ignore the exit-bootloader command */
+#define EXIT_BOOTLOADER 0
 
 /* use 8 or 16 bit counter, according to the page size of the target device */
 #if SPM_PAGESIZE < 256
