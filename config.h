@@ -177,4 +177,8 @@
 #   define BUF_T uint16_t
 #endif
 
+/* version information */
+#define VERSION_BYTE_1 '0'
+#define VERSION_BYTE_2 '1'
+
 #endif /* _FOODLOADER_CONFIG_H */

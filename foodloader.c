@@ -196,8 +196,6 @@ int main(void)
             case 'T':   /* select device type: received device type and respond with CR */
                         /* ignore this command, only the device this bootloader
                          * is installed on can be programmed :) */
-            case 'x':   /* set led, -> ignored */
-            case 'y':   /* clear led, -> ignored */
 
                         /* discard byte and acknowledge */
                         uart_getc();
@@ -216,13 +214,11 @@ int main(void)
                         break;
 
             case 'S':   /* give software identifier, send exactly 7 chars */
-                        uart_puts((uint8_t *)"FNORD!1");
-
-                        break;
+                        uart_puts((uint8_t *)"FDL v");
 
             case 'V':   /* return software version (2 byte) */
-                        uart_putc('2');
-                        uart_putc('3');
+                        uart_putc(VERSION_BYTE_1);
+                        uart_putc(VERSION_BYTE_2);
                         break;
 
             case 'p':   /* send programmer type, in this case 'S' for serial */
