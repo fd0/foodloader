@@ -44,7 +44,9 @@
 
 /* define UBRR value (see datasheet */
 #if (F_CPU == 16000000)
-#define UART_UBRR 8
+#define UART_UBRR 8 /* 16mhz, 115200 */
+#elif (F_CPU == 8000000)
+#define UART_UBRR 25 /* 8mhz, 19200 */
 #else
 #error this cpu frequency is not supported by uart.h yet!
 #error (see datasheet for UBRR value at 115200 baud)
