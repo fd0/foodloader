@@ -201,9 +201,11 @@
 #define BOOTLOADER_PIN PINC
 #endif
 
-#ifndef BOOTLOADER_MASK
-#define BOOTLOADER_MASK _BV(PINC0)
+#ifndef BOOTLOADER_PINNUM
+#define BOOTLOADER_PINNUM PINC0
 #endif
+
+#define BOOTLOADER_MASK _BV(BOOTLOADER_PINNUM)
 
 /* uart configuration */
 #define UART_BAUDRATE 115200
