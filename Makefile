@@ -14,6 +14,8 @@ else ifeq ($(MCU),atmega88)
 	AVRDUDE_MCU=m88
 else ifeq ($(MCU),atmega168)
 	AVRDUDE_MCU=m168
+else ifeq ($(MCU),atmega32)
+	AVRDUDE_MCU=m32
 endif
 
 # bootloader section start
@@ -42,6 +44,14 @@ else ifeq ($(MCU),atmega168)
 	# atmega168 with 512 words bootloader:
 	# bootloader section starts at 0x1e00 (word-address) == 0x3c00 (byte-address)
 	BOOT_SECTION_START = 0x3c00
+else ifeq ($(MCU),atmega32)
+	# atmega32 with 1024 words bootloader:
+	# bootloader section starts at 0x3c00 (word-address) == 0x7800 (byte-address)
+	#BOOT_SECTION_START = 0x7800
+	#
+	# atmega32 with 512 words bootloader:
+	# bootloader section starts at 0x3e00 (word-address) == 0x7c00 (byte-address)
+	BOOT_SECTION_START = 0x7c00
 endif
 
 LDFLAGS += -Wl,--section-start=.text=$(BOOT_SECTION_START)

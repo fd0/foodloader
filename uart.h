@@ -25,7 +25,7 @@
 #define _UART_H
 
 /* define uart baud rate and mode (8N1) */
-#if defined(__AVR_ATmega8__)
+#if defined(__AVR_ATmega8__) || defined(__AVR_ATmega32__)
 /* {{{ */
 /* in atmega8, we need a special switching bit
  * for addressing UCSRC */
@@ -46,7 +46,8 @@
 #if (F_CPU == 16000000)
 #define UART_UBRR 8 /* 16mhz, 115200 */
 #elif (F_CPU == 8000000)
-#define UART_UBRR 25 /* 8mhz, 19200 */
+/* #define UART_UBRR 25 */ /* 8mhz, 19200 */
+/* #define UART_UBRR 3 */ /* 8mhz, 115200 */
 #else
 #error this cpu frequency is not supported by uart.h yet!
 #error (see datasheet for UBRR value at 115200 baud)

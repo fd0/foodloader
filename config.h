@@ -141,6 +141,39 @@
 #define _AVR910_DEVCODE 0x35
 
 /* }}} */
+#elif defined(__AVR_ATmega32__)
+/* {{{ */
+#define _ATMEGA32
+
+#define _TIMSK_TIMER1 TIMSK1
+#define _UDRIE_UART0 UDRIE0
+#define _TXEN_UART0 TXEN
+#define _RXEN_UART0 RXEN
+#define _RXCIE_UART0 RXCIE0
+#define _UBRRH_UART0 UBRRH
+#define _UBRRL_UART0 UBRRL
+#define _UCSRA_UART0 UCSRA
+#define _UCSRB_UART0 UCSRB
+#define _UCSRC_UART0 UCSRC
+#define _UCSZ0_UART0 UCSZ00
+#define _UCSZ1_UART0 UCSZ01
+#define _SIG_UART_RECV_UART0 SIG_USART_RECV
+#define _SIG_UART_DATA_UART0 SIG_USART_DATA
+#define _UDR_UART0 UDR
+#define _UDRE_UART0 UDRE
+#define _RXC_UART0 RXC
+#define _IVREG MCUCR
+#define _TIFR_TIMER1 TIFR1
+
+/* see datasheet! */
+#define _SIG_BYTE_1 0x1e
+#define _SIG_BYTE_2 0x95
+#define _SIG_BYTE_3 0x02
+
+/* see avrdude configuration */
+#define _AVR910_DEVCODE 0x72
+
+/* }}} */
 #else
 #error this cpu isn't supported yet!
 #endif
@@ -156,10 +189,21 @@
 #endif
 
 /* bootloader activation method */
+#ifndef BOOTLOADER_DDR
 #define BOOTLOADER_DDR DDRC
+#endif
+
+#ifndef BOOTLOADER_PORT
 #define BOOTLOADER_PORT PORTC
+#endif
+
+#ifndef BOOTLOADER_PIN
 #define BOOTLOADER_PIN PINC
+#endif
+
+#ifndef BOOTLOADER_MASK
 #define BOOTLOADER_MASK _BV(PINC0)
+#endif
 
 /* uart configuration */
 #define UART_BAUDRATE 115200
