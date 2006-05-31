@@ -175,7 +175,7 @@
 
 /* }}} */
 #else
-#error this cpu isn't supported yet!
+#error "this cpu is not supported yet!"
 #endif
 
 /* debug defines */
