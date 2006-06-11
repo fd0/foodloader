@@ -210,6 +210,9 @@
 /* uart configuration */
 #define UART_BAUDRATE 115200
 
+/* watchdog configuration */
+#define HONOR_WATCHDOG_RESET
+
 /* buffer load configuration */
 #define BLOCKSIZE SPM_PAGESIZE
 

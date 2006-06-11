@@ -111,6 +111,14 @@ static noinline void start_application(void)
 
 int main(void)
 /* {{{ */ {
+
+#   ifdef HONOR_WATCHDOG_RESET
+    /* if this reset was caused by the watchdog timer, just start the application */
+    if (MCUCSR & _BV(WDRF))
+        jump_to_application();
+#   endif
+
+
     uint8_t memory_type;
 
     /* BUF_T is defined in config.h, according the pagesize */
