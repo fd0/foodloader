@@ -263,6 +263,6 @@
 
 /* version information */
 #define VERSION_BYTE_1 '0'
-#define VERSION_BYTE_2 '3'
+#define VERSION_BYTE_2 '2'
 
 #endif /* _FOODLOADER_CONFIG_H */
