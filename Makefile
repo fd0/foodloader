@@ -21,6 +21,8 @@ else ifeq ($(MCU),atmega168)
 	AVRDUDE_MCU=m168
 else ifeq ($(MCU),atmega32)
 	AVRDUDE_MCU=m32
+else ifeq ($(MCU),atmega644)
+	AVRDUDE_MCU=m644
 endif
 
 # bootloader section start
@@ -57,6 +59,14 @@ else ifeq ($(MCU),atmega32)
 	# atmega32 with 512 words bootloader:
 	# bootloader section starts at 0x3e00 (word-address) == 0x7c00 (byte-address)
 	BOOT_SECTION_START = 0x7c00
+else ifeq ($(MCU),atmega644)
+	# atmega644 with 1024 words bootloader:
+	# bootloader section starts at 0x7c00 (word-address) == 0xf800 (byte-address)
+	BOOT_SECTION_START = 0xf800
+	#
+	# atmega644 with 512 words bootloader:
+	# bootloader section starts at 0x7e00 (word-address) == 0xfc00 (byte-address)
+	#BOOT_SECTION_START = 0xfc00
 endif
 
 LDFLAGS += -Wl,--section-start=.text=$(BOOT_SECTION_START)
@@ -88,8 +98,18 @@ install: program-isp-$(TARGET)
 
 .PHONY: clean clean-$(TARGET)
 
-clean: clean-$(TARGET)
+clean: clean-$(TARGET) clean-uploadtest
 
 clean-$(TARGET):
 	rm -f $(TARGET)
+
+clean-uploadtest:
+	rm -f datatestfile.raw
+
+datatestfile.raw:
+	dd if=/dev/urandom of=datatestfile.raw bs=1 count=$$((1024*62))
+
+uploadtest: datatestfile.raw
+	@echo "uploading datatestfile"
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(SERIAL_PROG) -s -u -P $(SERIAL_DEV) -U f:w:$<:r
 

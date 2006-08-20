@@ -114,7 +114,7 @@ int main(void)
 
 #   ifdef HONOR_WATCHDOG_RESET
     /* if this reset was caused by the watchdog timer, just start the application */
-    if (MCUCSR & _BV(WDRF))
+    if (MCUSR & _BV(WDRF))
         jump_to_application();
 #   endif
 
