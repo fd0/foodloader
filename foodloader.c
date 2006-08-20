@@ -344,7 +344,7 @@ int main(void)
                         /* {{{ */ {
 
                             /* read buffer_size words */
-                            for (uint8_t i = 0; i < buffer_size; i += 2) {
+                            for (BUF_T i = 0; i < buffer_size; i += 2) {
                                 uint16_t temp_word_buffer;
 
                                 /* read word */
