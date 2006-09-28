@@ -13,18 +13,6 @@ TARGET = foodloader
 # include avr-generic makefile configuration
 include avr.mk
 
-ifeq ($(MCU),atmega8)
-	AVRDUDE_MCU=m8
-else ifeq ($(MCU),atmega88)
-	AVRDUDE_MCU=m88
-else ifeq ($(MCU),atmega168)
-	AVRDUDE_MCU=m168
-else ifeq ($(MCU),atmega32)
-	AVRDUDE_MCU=m32
-else ifeq ($(MCU),atmega644)
-	AVRDUDE_MCU=m644
-endif
-
 # bootloader section start
 # (see datasheet)
 ifeq ($(MCU),atmega8)
@@ -113,3 +101,5 @@ uploadtest: datatestfile.raw
 	@echo "uploading datatestfile"
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(SERIAL_PROG) -s -u -P $(SERIAL_DEV) -U f:w:$<:r
 
+lock:
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c avr910 -P $(ISP_DEV) -U lock:w:0x2f:m
