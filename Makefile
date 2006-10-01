@@ -13,16 +13,6 @@ TARGET = foodloader
 # include avr-generic makefile configuration
 include avr.mk
 
-ifeq ($(MCU),atmega8)
-	AVRDUDE_MCU=m8
-else ifeq ($(MCU),atmega88)
-	AVRDUDE_MCU=m88
-else ifeq ($(MCU),atmega168)
-	AVRDUDE_MCU=m168
-else ifeq ($(MCU),atmega32)
-	AVRDUDE_MCU=m32
-endif
-
 # bootloader section start
 # (see datasheet)
 ifeq ($(MCU),atmega8)
@@ -57,6 +47,14 @@ else ifeq ($(MCU),atmega32)
 	# atmega32 with 512 words bootloader:
 	# bootloader section starts at 0x3e00 (word-address) == 0x7c00 (byte-address)
 	BOOT_SECTION_START = 0x7c00
+else ifeq ($(MCU),atmega644)
+	# atmega644 with 1024 words bootloader:
+	# bootloader section starts at 0x7c00 (word-address) == 0xf800 (byte-address)
+	BOOT_SECTION_START = 0xf800
+	#
+	# atmega644 with 512 words bootloader:
+	# bootloader section starts at 0x7e00 (word-address) == 0xfc00 (byte-address)
+	#BOOT_SECTION_START = 0xfc00
 endif
 
 LDFLAGS += -Wl,--section-start=.text=$(BOOT_SECTION_START)
@@ -68,9 +66,9 @@ CFLAGS += -Werror
 LDFLAGS += -L/usr/local/avr/avr/lib
 
 
-.PHONY: all
+.PHONY: all launcher
 
-all: $(TARGET).hex $(TARGET).lss
+all: $(TARGET).hex $(TARGET).lss launcher
 	@echo "==============================="
 	@echo "compiled for: $(MCU)"
 	@echo -n "bootloader size is: "
@@ -86,10 +84,28 @@ $(TARGET): $(OBJECTS) $(TARGET).o
 install: program-isp-$(TARGET)
 	@echo "don't forget: the lock-bits have been cleaned by the chip-erase!"
 
-.PHONY: clean clean-$(TARGET)
+.PHONY: clean clean-$(TARGET) clean-launcher
 
-clean: clean-$(TARGET)
+clean: clean-$(TARGET) clean-uploadtest clean-launcher
 
 clean-$(TARGET):
 	rm -f $(TARGET)
 
+clean-uploadtest:
+	rm -f datatestfile.raw
+
+clean-launcher:
+	$(MAKE) -C launcher clean
+
+datatestfile.raw:
+	dd if=/dev/urandom of=datatestfile.raw bs=1 count=$$((1024*62))
+
+uploadtest: datatestfile.raw
+	@echo "uploading datatestfile"
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(SERIAL_PROG) -s -u -P $(SERIAL_DEV) -U f:w:$<:r
+
+lock:
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c avr910 -P $(ISP_DEV) -U lock:w:0x2f:m
+
+launcher:
+	$(MAKE) -C launcher

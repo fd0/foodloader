@@ -3,7 +3,7 @@ ISP_PROG = dapa
 # device the ISP programmer is connected to
 ISP_DEV = /dev/parport0
 # Programmer used for serial programming (using the bootloader)
-SERIAL_PROG = butterfly
+SERIAL_PROG = avr109
 # device the serial programmer is connected to
 SERIAL_DEV = /dev/ttyS0
 
@@ -21,6 +21,18 @@ SIZE = avr-size
 -include config.mk
 
 # flags for avrdude
+ifeq ($(MCU),atmega8)
+	AVRDUDE_MCU=m8
+else ifeq ($(MCU),atmega88)
+	AVRDUDE_MCU=m88
+else ifeq ($(MCU),atmega168)
+	AVRDUDE_MCU=m168
+else ifeq ($(MCU),atmega32)
+	AVRDUDE_MCU=m32
+else ifeq ($(MCU),atmega644)
+	AVRDUDE_MCU=m644
+endif
+
 AVRDUDE_FLAGS += -p $(AVRDUDE_MCU) -b $(AVRDUDE_BAUDRATE)
 
 # flags for the compiler
@@ -71,16 +83,16 @@ interactive-serial:
 .PHONY: all clean interactive-isp interactive-serial
 
 program-isp-%: %.hex
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(ISP_PROG) -P $(ISP_DEV) -U f:w:$<
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(ISP_PROG) -P $(ISP_DEV) -U flash:w:$<
 
 program-isp-eeprom-%: %.eep.hex
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(ISP_PROG) -P $(ISP_DEV) -U e:w:$<
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(ISP_PROG) -P $(ISP_DEV) -U eeprom:w:$<
 
 program-serial-%: %.hex
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(SERIAL_PROG) -P $(SERIAL_DEV) -U f:w:$<
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(SERIAL_PROG) -P $(SERIAL_DEV) -U flash:w:$<
 
 program-serial-eeprom-%: %.eep.hex
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(SERIAL_PROG) -P $(SERIAL_DEV) -U e:w:$<
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -c $(SERIAL_PROG) -P $(SERIAL_DEV) -U eeprom:w:$<
 
 %.hex: %
 	$(OBJCOPY) -O ihex -R .eeprom $< $@

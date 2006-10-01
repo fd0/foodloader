@@ -4,6 +4,9 @@
  * (c) by Alexander Neumann <alexander@bumpern.de>
  *     Lars Noschinski <lars@public.noschinski.de>
  *
+ *     Idea and implementation for char startup mode by
+ *     Scott Torborg - storborg@mit.edu - August 2006
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
@@ -26,8 +29,13 @@
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 #include "config.h"
 #include "uart.h"
+
+#ifdef HONOR_WATCHDOG_RESET
+#   include <avr/wdt.h>
+#endif
 
 uint16_t flash_address;             /* start flash (byte address, converted) write at this address */
 uint16_t eeprom_address;            /* start eerprom (byte address) write at this address */
@@ -79,6 +87,25 @@ static noinline uint8_t uart_getc(void)
 
 } /* }}} */
 
+/* loop a few times, and see if the character is received */
+static inline uint8_t wait_for_char(void)
+/*{{{*/ {
+    uint8_t i;
+
+    for(i = 0; i < 5; i++) {
+        _delay_loop_2(65535);
+
+        if(_UCSRA_UART0 & _BV(_RXC_UART0)) {
+            if(_UDR_UART0 == BOOTLOADER_ENTRY_CHAR) {
+                    return 1;
+            }
+        }
+    }
+
+    /* never received the character */
+    return 0;
+} /* }}} */
+
 /** init the hardware uart */
 static inline void init_uart(void)
 /*{{{*/ {
@@ -111,6 +138,17 @@ static noinline void start_application(void)
 
 int main(void)
 /* {{{ */ {
+
+#   ifdef HONOR_WATCHDOG_RESET
+    /* if this reset was caused by the watchdog timer, just start the
+     * application, else disable the watchdog */
+    if (MCUSR & _BV(WDRF))
+        jump_to_application();
+    else
+        wdt_disable();
+#   endif
+
+
     uint8_t memory_type;
 
     /* BUF_T is defined in config.h, according the pagesize */
@@ -127,14 +165,30 @@ int main(void)
     BOOTLOADER_DDR &= ~BOOTLOADER_MASK;
     BOOTLOADER_PORT |= BOOTLOADER_MASK;
 
-    /* check if pin is not pulled low */
-    if (BOOTLOADER_PIN & BOOTLOADER_MASK) {
+    /* bootloader activation methods */
+    if (
+#   ifdef BOOTLOADER_JUMPER
+            /* 1) activation via jumper */
+            ((BOOTLOADER_PIN & BOOTLOADER_MASK) == 0) ||
+#   endif
+#   ifdef BOOTLOADER_CHAR
+            /* 2) or activation via char */
+            wait_for_char() ||
+#   endif
+            0) {
+
+        goto start_bootloader;
+
+    } else {
 #       if SEND_BOOT_MESSAGE
         uart_putc('a');
 #       endif
 
         start_application();
     }
+
+
+start_bootloader:
 
 #   if SEND_BOOT_MESSAGE
     uart_putc('p');
@@ -336,7 +390,7 @@ int main(void)
                         /* {{{ */ {
 
                             /* read buffer_size words */
-                            for (uint8_t i = 0; i < buffer_size; i += 2) {
+                            for (BUF_T i = 0; i < buffer_size; i += 2) {
                                 uint16_t temp_word_buffer;
 
                                 /* read word */
