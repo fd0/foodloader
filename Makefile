@@ -34,11 +34,11 @@ else ifeq ($(MCU),atmega88)
 else ifeq ($(MCU),atmega168)
 	# atmega168 with 1024 words bootloader:
 	# bootloader section starts at 0x1c00 (word-address) == 0x3800 (byte-address)
-	#BOOT_SECTION_START = 0x3800
+	BOOT_SECTION_START = 0x3800
 	#
 	# atmega168 with 512 words bootloader:
 	# bootloader section starts at 0x1e00 (word-address) == 0x3c00 (byte-address)
-	BOOT_SECTION_START = 0x3c00
+	#BOOT_SECTION_START = 0x3c00
 else ifeq ($(MCU),atmega32)
 	# atmega32 with 1024 words bootloader:
 	# bootloader section starts at 0x3c00 (word-address) == 0x7800 (byte-address)
@@ -98,7 +98,7 @@ clean-launcher:
 	$(MAKE) -C launcher clean
 
 datatestfile.raw:
-	dd if=/dev/urandom of=datatestfile.raw bs=1 count=$$((1024*62))
+	dd if=/dev/urandom of=datatestfile.raw bs=1 count=$$((1024*14))
 
 uploadtest: datatestfile.raw
 	@echo "uploading datatestfile"
