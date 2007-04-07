@@ -37,7 +37,7 @@
 #   include <avr/wdt.h>
 #endif
 
-uint16_t flash_address;             /* start flash (byte address, converted) write at this address */
+FLASH_ADDR_T flash_address;             /* start flash (byte address, converted) write at this address */
 uint16_t eeprom_address;            /* start eerprom (byte address) write at this address */
 
 

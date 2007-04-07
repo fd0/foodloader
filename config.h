@@ -215,6 +215,39 @@
     #define _AVR910_DEVCODE 0x02
 
     /* }}} */
+    #elif defined(__AVR_ATmega128__)
+    /* {{{ */
+    #define _ATMEGA128
+
+    #define _TIMSK_TIMER1 TIMSK1
+    #define _UDRIE_UART0 UDRIE0
+    #define _TXEN_UART0 TXEN
+    #define _RXEN_UART0 RXEN
+    #define _RXCIE_UART0 RXCIE0
+    #define _UBRRH_UART0 UBRR0H
+    #define _UBRRL_UART0 UBRR0L
+    #define _UCSRA_UART0 UCSR0A
+    #define _UCSRB_UART0 UCSR0B
+    #define _UCSRC_UART0 UCSR0C
+    #define _UCSZ0_UART0 UCSZ00
+    #define _UCSZ1_UART0 UCSZ01
+    #define _SIG_UART_RECV_UART0 SIG_USART_RECV
+    #define _SIG_UART_DATA_UART0 SIG_USART_DATA
+    #define _UDR_UART0 UDR0
+    #define _UDRE_UART0 UDRE
+    #define _RXC_UART0 RXC
+    #define _IVREG MCUCR
+    #define _TIFR_TIMER1 TIFR
+
+    /* see datasheet! */
+    #define _SIG_BYTE_1 0x1e
+    #define _SIG_BYTE_2 0x97
+    #define _SIG_BYTE_3 0x02
+
+    /* see avrdude configuration */
+    #define _AVR910_DEVCODE 0x44
+
+    /* }}} */
     #else
     #error "this cpu is not supported yet!"
     #endif
@@ -285,6 +318,13 @@
 #   define BUF_T uint8_t
 #else
 #   define BUF_T uint16_t
+#endif
+
+/* use 16 or 32 bit counter, according to the flash page count of the target device */
+#if BOOT_SECTION_START <= 65535
+#   define FLASH_ADDR_T uint16_t
+#else
+#   define FLASH_ADDR_T uint32_t
 #endif
 
 /* version information */

@@ -45,10 +45,14 @@ atmega88/168:
         512 words bootloader size: BOOTSZ0 = 1
                                    BOOTSZ1 = 0
 
+        OR:
+        1024 words bootloader size: BOOTSZ0 = 0
+                                    BOOTSZ1 = 0
+
         reset vector, jump to bootloader on reset: BOOTRST = 0
 
     -> default: 0b001 = 0x01
-       new:     0b010 = 0x02
+       new:     0b010 = 0x02 OR 0x00
 
     lock byte:
         SPM is not allowed to write to the Boot Loader section BLB12 = 1
