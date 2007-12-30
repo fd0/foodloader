@@ -25,7 +25,7 @@
 #define _UART_H
 
 /* define uart baud rate and mode (8N1) */
-#if defined(__AVR_ATmega8__) || defined(__AVR_ATmega32__)
+#if defined(__AVR_ATmega8__) || defined(__AVR_ATmega32__) || defined(__AVR_ATmega16__)
 /* {{{ */
 /* in atmega8, we need a special switching bit
  * for addressing UCSRC */

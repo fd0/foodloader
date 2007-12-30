@@ -47,6 +47,14 @@ else ifeq ($(MCU),atmega32)
 	# atmega32 with 512 words bootloader:
 	# bootloader section starts at 0x3e00 (word-address) == 0x7c00 (byte-address)
 	BOOT_SECTION_START = 0x7c00
+else ifeq ($(MCU),atmega16)
+	# atmega16 with 1024 words bootloader:
+	# bootloader section starts at 0x1c00 (word-address) == 0x3800 (byte-address)
+	#BOOT_SECTION_START = 0x3800
+	#
+	# atmega16 with 512 words bootloader:
+	# bootloader section starts at 0x1e00 (word-address) == 0x3c00 (byte-address)
+	BOOT_SECTION_START = 0x3c00
 else ifeq ($(MCU),atmega644)
 	# atmega644 with 1024 words bootloader:
 	# bootloader section starts at 0x7c00 (word-address) == 0xf800 (byte-address)
