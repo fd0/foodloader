@@ -25,6 +25,8 @@ ifeq ($(MCU),atmega8)
 	AVRDUDE_MCU=m8
 else ifeq ($(MCU),atmega88)
 	AVRDUDE_MCU=m88
+else ifeq ($(MCU),atmega128)
+	AVRDUDE_MCU=m128
 else ifeq ($(MCU),atmega168)
 	AVRDUDE_MCU=m168
 else ifeq ($(MCU),atmega32)
