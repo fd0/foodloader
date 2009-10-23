@@ -35,7 +35,7 @@ main(int argc, char* argv[])
     unsigned char w[1], r[1];
     fd_set fds;
 
-    if((argc != 3) || (argv[1] == "-h") || (argv[1] == "--help")) {
+    if((argc != 3) || (strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)) {
         printf("Usage: %s <serial device> <baudrate>\n", argv[0]);
     } else {
         printf("Opening serial device %s.\n", argv[1]);
